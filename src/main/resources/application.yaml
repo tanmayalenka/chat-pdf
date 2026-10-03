@@ -1,0 +1,72 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chatpdf
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chatpdf
+    username: langchain
+    password: langchain
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: update          # auto-create/update the `documents` table
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: false
+    open-in-view: false         # avoid the classic lazy-loading warning
+
+  # File upload limits (PDFs can be large)
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+  # Disable Spring Security style banners for now (not needed unless you add security later)
+  main:
+    banner-mode: console
+
+# ---- App-specific config (bound by AppProperties.java) ----
+chatpdf:
+  ollama:
+    base-url: http://localhost:11434
+    chat-model: llama3.1:8b
+    embedding-model: nomic-embed-text
+    temperature: 0.0
+    timeout-seconds: 120
+
+  pgvector:
+    host: localhost
+    port: 5432
+    database: chatpdf
+    user: langchain
+    password: langchain
+    table: chatpdf_embeddings
+    dimension: 768          # nomic-embed-text = 768 dims
+    create-table: true
+    use-index: true
+    index-list-size: 100
+
+  rag:
+    chunk-size: 1000
+    chunk-overlap: 200
+    max-results: 4          # top-K retrieved chunks
+
+  upload:
+    storage-dir: ./uploads  # where we temporarily save uploaded PDFs
+
+logging:
+  level:
+    root: INFO
+    com.example.chatpdf: DEBUG
+    dev.langchain4j: INFO
+    org.springframework.web: INFO
