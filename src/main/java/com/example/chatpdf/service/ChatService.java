@@ -96,13 +96,19 @@ public class ChatService {
 
     private AskResponse.Source toSource(EmbeddingMatch<TextSegment> match) {
         TextSegment segment = match.embedded();
+        var meta = segment.metadata();
+
         String snippet = segment.text();
         if (snippet.length() > 300) {
             snippet = snippet.substring(0, 300) + "...";
         }
+
+        Integer page = meta.getInteger("pageNumber");   // null-safe
+
         return new AskResponse.Source(
-                segment.metadata().getString("docId"),
-                segment.metadata().getString("fileName"),
+                meta.getString("docId"),
+                meta.getString("fileName"),
+                page,
                 snippet,
                 match.score()
         );

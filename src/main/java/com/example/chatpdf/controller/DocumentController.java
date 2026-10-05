@@ -65,7 +65,8 @@ public class DocumentController {
                 e.getDocId(),
                 e.getFileName(),
                 e.getUploadedAt().toString(),
-                e.getChunkCount()
+                e.getChunkCount(),
+                e.getPageCount()
         );
     }
 }

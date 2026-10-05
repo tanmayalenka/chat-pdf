@@ -59,7 +59,7 @@ chatpdf:
   rag:
     chunk-size: 1000
     chunk-overlap: 200
-    max-results: 4          # top-K retrieved chunks
+    max-results: 8          # top-K retrieved chunks
 
   upload:
     storage-dir: ./uploads  # where we temporarily save uploaded PDFs

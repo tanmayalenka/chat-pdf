@@ -9,6 +9,7 @@ public record AskResponse(
     public record Source(
             String docId,
             String fileName,
+            Integer pageNumber,
             String snippet,
             double score
     ) { }

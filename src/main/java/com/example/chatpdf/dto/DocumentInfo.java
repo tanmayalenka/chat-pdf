@@ -4,5 +4,6 @@ public record DocumentInfo(
         String docId,
         String fileName,
         String uploadedAt,
-        long chunkCount
+        long chunkCount,
+        int pageCount
 ) { }

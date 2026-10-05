@@ -217,14 +217,22 @@
             const details = document.createElement("details");
             details.className = "sources";
             details.innerHTML = `<summary>Sources (${data.sources.length})</summary>`;
+
+            // De-dup consecutive same-page hits for a cleaner list
             data.sources.forEach((s) => {
+                const pageLabel = s.pageNumber != null
+                    ? ` — page ${s.pageNumber}`
+                    : "";
+
                 const div = document.createElement("div");
                 div.className = "source";
                 div.innerHTML = `
-          <span class="source__score">${(s.score * 100).toFixed(0)}%</span>
-          <span class="source__file">${escapeHtml(s.fileName || "unknown")}</span>
-          ${escapeHtml(s.snippet || "")}
-        `;
+        <span class="source__score">${(s.score * 100).toFixed(0)}%</span>
+        <span class="source__file">
+          ${escapeHtml(s.fileName || "unknown")}${pageLabel}
+        </span>
+        ${escapeHtml(s.snippet || "")}
+      `;
                 details.appendChild(div);
             });
             bubble.appendChild(details);

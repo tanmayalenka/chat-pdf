@@ -6,7 +6,6 @@ import com.example.chatpdf.entity.DocumentEntity;
 import com.example.chatpdf.repository.DocumentRepository;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
-import dev.langchain4j.data.document.parser.apache.pdfbox.ApachePdfBoxDocumentParser;
 import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -14,16 +13,19 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,61 +45,58 @@ public class DocumentService {
 
         String docId = UUID.randomUUID().toString();
         String originalName = file.getOriginalFilename();
+        Instant uploadedAt = Instant.now();
 
-        // 1. Persist file to disk
+        // 1. Persist file
         Path storageDir = Paths.get(props.getUpload().getStorageDir())
                 .toAbsolutePath().normalize();
         Files.createDirectories(storageDir);
-        String safeName = originalName.replaceAll("[^a-zA-Z0-9._-]", "_");
+        String safeName = originalName != null ? originalName.replaceAll("[^a-zA-Z0-9._-]", "_") : null;
         Path target = storageDir.resolve(docId + "_" + safeName);
         file.transferTo(target);
 
-        // 2. Save JPA record with status INDEXING
+        // 2. Save JPA record (INDEXING)
         DocumentEntity entity = DocumentEntity.builder()
                 .docId(docId)
                 .fileName(originalName)
                 .storedPath(target.toString())
                 .sizeBytes(file.getSize())
                 .chunkCount(0)
+                .pageCount(0)                       // ← add this column, see 3.2b
                 .status(DocumentEntity.DocumentStatus.INDEXING)
-                .uploadedAt(Instant.now())
+                .uploadedAt(uploadedAt)
                 .build();
         documentRepository.save(entity);
 
         try {
-            // 3. Parse PDF
-            Document document;
-            try (InputStream in = Files.newInputStream(target)) {
-                document = new ApachePdfBoxDocumentParser().parse(in);
-            }
-
-            // 4. Attach metadata
-            Metadata metadata = new Metadata();
-            metadata.put("docId", docId);
-            metadata.put("fileName", originalName);
-            metadata.put("uploadedAt", entity.getUploadedAt().toString());
-            document = Document.from(document.text(), metadata);
-
-            // 5. Split
-            var rag = props.getRag();
-            List<TextSegment> segments = DocumentSplitters
-                    .recursive(rag.getChunkSize(), rag.getChunkOverlap())
-                    .split(document);
+            // 3. Split into per-page TextSegments
+            List<TextSegment> segments = parseAndSplitPerPage(
+                    target, docId, originalName, uploadedAt);
 
             if (segments.isEmpty()) {
-                throw new IllegalStateException("PDF produced no text chunks");
+                throw new IllegalStateException(
+                        "PDF produced no text chunks — is it a scanned image?");
             }
 
-            // 6. Embed + store
+            // 4. Embed + store in one batch
             List<Embedding> embeddings = embeddingModel.embedAll(segments).content();
             embeddingStore.addAll(embeddings, segments);
 
-            // 7. Update JPA record → INDEXED
+            // 5. Count distinct pages that actually contributed text
+            int pagesWithText = (int) segments.stream()
+                    .map(s -> s.metadata().getInteger("pageNumber"))
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .count();
+
+            // 6. Update JPA record (INDEXED)
             entity.setChunkCount(segments.size());
+            entity.setPageCount(pagesWithText);
             entity.setStatus(DocumentEntity.DocumentStatus.INDEXED);
             documentRepository.save(entity);
 
-            log.info("Indexed {} chunks for docId={}", segments.size(), docId);
+            log.info("Indexed '{}' — {} pages, {} chunks (docId={})",
+                    originalName, pagesWithText, segments.size(), docId);
 
             return new UploadResponse(
                     docId, originalName, segments.size(),
@@ -108,6 +107,52 @@ public class DocumentService {
             documentRepository.save(entity);
             throw ex;
         }
+    }
+
+    /**
+     * Parses a PDF page by page and returns chunks tagged with pageNumber.
+     * Chunks never cross page boundaries.
+     */
+    private List<TextSegment> parseAndSplitPerPage(
+            Path pdf,
+            String docId,
+            String fileName,
+            Instant uploadedAt) throws IOException {
+
+        var rag = props.getRag();
+        var splitter = DocumentSplitters.recursive(
+                rag.getChunkSize(), rag.getChunkOverlap());
+
+        List<TextSegment> allSegments = new ArrayList<>();
+
+        try (PDDocument pdfDoc = Loader.loadPDF(pdf.toFile())) {
+            int pageCount = pdfDoc.getNumberOfPages();
+            PDFTextStripper stripper = new PDFTextStripper();
+
+            for (int page = 1; page <= pageCount; page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+                String text = stripper.getText(pdfDoc);
+
+                if (text == null || text.isBlank()) {
+                    log.debug("Page {} has no text — skipping (scanned image?)", page);
+                    continue;
+                }
+
+                // Build metadata for this page
+                Metadata meta = new Metadata();
+                meta.put("docId",      docId);
+                meta.put("fileName",   fileName);
+                meta.put("uploadedAt", uploadedAt.toString());
+                meta.put("pageNumber", page);   // ← integer metadata
+
+                Document pageDoc = Document.from(text.trim(), meta);
+
+                // Split this page; every produced segment inherits pageNumber
+                allSegments.addAll(splitter.split(pageDoc));
+            }
+        }
+        return allSegments;
     }
 
     private void validate(MultipartFile file) {

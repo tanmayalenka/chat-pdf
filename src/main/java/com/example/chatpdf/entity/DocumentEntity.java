@@ -32,6 +32,9 @@ public class DocumentEntity {
     @Column(name = "chunk_count", nullable = false)
     private int chunkCount;
 
+    @Column(name = "page_count", nullable = false)
+    private int pageCount;
+
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private Instant uploadedAt;
 
