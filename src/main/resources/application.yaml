@@ -60,6 +60,7 @@ chatpdf:
     chunk-size: 1000
     chunk-overlap: 200
     max-results: 8          # top-K retrieved chunks
+    min-score: 0.7
 
   upload:
     storage-dir: ./uploads  # where we temporarily save uploaded PDFs
@@ -68,5 +69,6 @@ logging:
   level:
     root: INFO
     com.example.chatpdf: DEBUG
-    dev.langchain4j: INFO
+    dev.langchain4j: DEBUG
+    dev.langchain4j.service: TRACE
     org.springframework.web: INFO

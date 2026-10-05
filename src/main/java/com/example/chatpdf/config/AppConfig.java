@@ -1,10 +1,12 @@
 package com.example.chatpdf.config;
 
+import com.example.chatpdf.service.ChatAssistant;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +59,13 @@ public class AppConfig {
                 .createTable(p.isCreateTable())
                 .useIndex(p.isUseIndex())
                 .indexListSize(p.getIndexListSize())
+                .build();
+    }
+
+    @Bean
+    public ChatAssistant chatAssistant(ChatModel chatModel) {
+        return AiServices.builder(ChatAssistant.class)
+                .chatModel(chatModel)
                 .build();
     }
 }

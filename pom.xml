@@ -14,7 +14,7 @@
 
 	<properties>
 		<java.version>25</java.version>
-		<langchain4j.version>1.11.0</langchain4j.version>
+		<langchain4j.version>1.13.0</langchain4j.version>
 	</properties>
 
 	<dependencies>
@@ -52,11 +52,19 @@
 			<version>${langchain4j.version}</version>
 		</dependency>
 
+		<!-- Source: https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-guardrails -->
+		<dependency>
+			<groupId>dev.langchain4j</groupId>
+			<artifactId>langchain4j-guardrails</artifactId>
+			<version>1.13.0-beta23</version>
+			<scope>compile</scope>
+		</dependency>
+
 		<!-- Source: https://mvnrepository.com/artifact/dev.langchain4j/langchain4j-pgvector -->
 		<dependency>
 			<groupId>dev.langchain4j</groupId>
 			<artifactId>langchain4j-pgvector</artifactId>
-			<version>1.11.11-beta19</version>
+			<version>1.13.0-beta23</version>
 			<scope>compile</scope>
 		</dependency>
 

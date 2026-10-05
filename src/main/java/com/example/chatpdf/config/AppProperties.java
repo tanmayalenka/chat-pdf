@@ -44,6 +44,7 @@ public class AppProperties {
         private int chunkSize;
         private int chunkOverlap;
         private int maxResults;
+        private double minScore;
     }
 
     @Getter @Setter

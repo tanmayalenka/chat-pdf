@@ -1,5 +1,7 @@
 package com.example.chatpdf.exception;
 
+import dev.langchain4j.guardrail.InputGuardrailException;
+import dev.langchain4j.guardrail.OutputGuardrailException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -53,6 +55,28 @@ public class GlobalExceptionHandler {
                 "status", status.value(),
                 "error", status.getReasonPhrase(),
                 "message", message == null ? "" : message
+        ));
+    }
+
+    @ExceptionHandler(InputGuardrailException.class)
+    public ResponseEntity<Map<String, Object>> inputGuardrail(InputGuardrailException ex) {
+        log.info("Input guardrail blocked request: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 400,
+                "error", "Bad Request",
+                "message", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(OutputGuardrailException.class)
+    public ResponseEntity<Map<String, Object>> outputGuardrail(OutputGuardrailException ex) {
+        log.warn("Output guardrail failed after retries: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", 422,
+                "error", "Unprocessable Entity",
+                "message", "The model could not produce a grounded, safe answer. Please rephrase."
         ));
     }
 }
