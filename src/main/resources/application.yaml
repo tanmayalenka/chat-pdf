@@ -59,8 +59,16 @@ chatpdf:
   rag:
     chunk-size: 1000
     chunk-overlap: 200
-    max-results: 8          # top-K retrieved chunks
-    min-score: 0.7
+    max-results: 20          # ← retrieve WIDE
+    min-score: 0.2           # ← lower threshold for the wide net
+    rerank:
+      enabled: true
+#      model-path: models/model_quantized.onnx
+      model-path: models/bge-reranker-base.onnx
+#      tokenizer-path: models/tokenizer.json
+      tokenizer-path: models/bge-tokenizer.json
+      final-top-k: 4         # ← final count sent to LLM
+      min-score: -6         # reranker scores are on a different scale
 
   upload:
     storage-dir: ./uploads  # where we temporarily save uploaded PDFs

@@ -45,6 +45,16 @@ public class AppProperties {
         private int chunkOverlap;
         private int maxResults;
         private double minScore;
+        private Rerank rerank = new Rerank();
+    }
+
+    @Getter @Setter
+    public static class Rerank {
+        private boolean enabled;
+        private String modelPath;
+        private String tokenizerPath;
+        private int finalTopK;
+        private double minScore;
     }
 
     @Getter @Setter

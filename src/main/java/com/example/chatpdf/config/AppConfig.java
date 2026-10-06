@@ -6,10 +6,17 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
+import dev.langchain4j.model.scoring.ScoringModel;
+import dev.langchain4j.model.scoring.onnx.OnnxScoringModel;
+import dev.langchain4j.rag.DefaultRetrievalAugmentor;
+import dev.langchain4j.rag.RetrievalAugmentor;
+import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
+import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -67,5 +74,12 @@ public class AppConfig {
         return AiServices.builder(ChatAssistant.class)
                 .chatModel(chatModel)
                 .build();
+    }
+
+    @Bean(destroyMethod = "close")
+    @ConditionalOnProperty(prefix = "chatpdf.rag.rerank", name = "enabled", havingValue = "true")
+    public ScoringModel scoringModel() {
+        var cfg = props.getRag().getRerank();
+        return new OnnxScoringModel(cfg.getModelPath(), cfg.getTokenizerPath());
     }
 }
