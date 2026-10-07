@@ -5,6 +5,7 @@ import com.example.chatpdf.guardrail.input.PromptInjectionGuardrail;
 import com.example.chatpdf.guardrail.input.ScopeGuardrail;
 import com.example.chatpdf.guardrail.output.GroundingGuardrail;
 import com.example.chatpdf.guardrail.output.PiiOutputGuardrail;
+import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
 import dev.langchain4j.service.guardrail.InputGuardrails;
@@ -29,5 +30,5 @@ public interface ChatAssistant {
         Never invent facts, numbers, or names.
         Keep answers concise and cite the page number when available.
         """)
-    String answer(@UserMessage String question);
+    String answer(@MemoryId String sessionId, @UserMessage String question);
 }

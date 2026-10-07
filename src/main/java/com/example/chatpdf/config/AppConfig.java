@@ -2,16 +2,14 @@ package com.example.chatpdf.config;
 
 import com.example.chatpdf.service.ChatAssistant;
 import dev.langchain4j.data.segment.TextSegment;
+import dev.langchain4j.memory.chat.ChatMemoryProvider;
+import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaEmbeddingModel;
 import dev.langchain4j.model.scoring.ScoringModel;
 import dev.langchain4j.model.scoring.onnx.OnnxScoringModel;
-import dev.langchain4j.rag.DefaultRetrievalAugmentor;
-import dev.langchain4j.rag.RetrievalAugmentor;
-import dev.langchain4j.rag.content.aggregator.ReRankingContentAggregator;
-import dev.langchain4j.rag.query.router.DefaultQueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
@@ -73,6 +71,7 @@ public class AppConfig {
     public ChatAssistant chatAssistant(ChatModel chatModel) {
         return AiServices.builder(ChatAssistant.class)
                 .chatModel(chatModel)
+                .chatMemoryProvider(chatMemoryProvider())
                 .build();
     }
 
@@ -81,5 +80,15 @@ public class AppConfig {
     public ScoringModel scoringModel() {
         var cfg = props.getRag().getRerank();
         return new OnnxScoringModel(cfg.getModelPath(), cfg.getTokenizerPath());
+    }
+
+    @Bean
+    public ChatMemoryProvider chatMemoryProvider() {
+        // This provider creates a new in-memory store for every conversation/user.
+        // We use a MessageWindow to keep the last 5 messages.
+        return memoryId -> MessageWindowChatMemory.builder()
+                .id(memoryId)
+                .maxMessages(5) // Tune this value as needed
+                .build();
     }
 }

@@ -76,7 +76,7 @@ public class ChatService {
                     QUESTION: %s
                     """.formatted(context, request.question());
 
-            String answer = chatAssistant.answer(userMessage);
+            String answer = chatAssistant.answer(request.sessionId(), userMessage);
 
             // 6. Citations from the same top-K set
             List<AskResponse.Source> sources = topK.stream()

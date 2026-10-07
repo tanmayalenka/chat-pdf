@@ -191,11 +191,15 @@
         const assistantBubble = appendBubble("assistant", "", true);
         setBusy(true);
 
+        const sessionId = crypto.randomUUID();
+
+        console.log("Session ID:", sessionId);
+
         try {
             const res = await fetch("/api/chat/ask", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ question: q, docId: activeDocId }),
+                body: JSON.stringify({ question: q, docId: activeDocId, sessionId: sessionId }),
             });
             if (!res.ok) throw new Error(await readError(res));
             const data = await res.json();
