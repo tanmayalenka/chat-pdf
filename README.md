@@ -1,11 +1,11 @@
-```markdown
 # ChatPDF — Local Document Q&A Copilot
+A PDF question-answering copilot that runs fully offline. Upload a PDF, ask questions in natural language, get answers grounded in the document with page-level citations and similarity scores. The interesting part isn't the LLM call — it's the machinery around it that keeps answers honest.
 
-A PDF question-answering copilot that runs fully offline. Upload a PDF, ask questions in natural language, get answers grounded in the document with **page-level citations** and similarity scores. The interesting part isn't the LLM call — it's the machinery around it that keeps answers honest.
-
-**Measured on a 100-question eval set:** 0.94 answer faithfulness (RAGAS-style LLM-as-judge), unsupported claims reduced from 12% → 3.8% via grounding verification and abstention logic.
-
----
+<div>
+  <img src="images/landing_page.png" width="30%">
+  <img src="images/question.png" width="30%">
+  <img src="images/answer.png" width="30%">
+</div>
 
 ## Table of Contents
 
@@ -450,4 +450,3 @@ chatpdf/
 ## Contact / Questions
 
 This is a POC, not a product. If something in this README doesn't match the code, the code is right — the README was written last.
-```
